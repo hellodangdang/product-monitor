@@ -1,0 +1,31 @@
+name: Product Monitor
+
+on:
+  schedule:
+    # Run every 5 minutes (minimum interval for GitHub Actions)
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install dependencies
+        run: |
+          pip install requests
+      
+      - name: Run monitor
+        env:
+          PRODUCT_URL: ${{ secrets.PRODUCT_URL }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          python3 monitor_github_actions.py
+

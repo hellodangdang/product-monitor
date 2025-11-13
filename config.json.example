@@ -1,0 +1,38 @@
+{
+  "product_url": "https://www.therow.com/products/sally-black",
+  "check_interval": 60,
+  "headless": false,
+  "exit_after_purchase": false,
+  "shipping_info": {
+    "email": "your-email@example.com",
+    "first_name": "Your First Name",
+    "last_name": "Your Last Name",
+    "address1": "Your Street Address",
+    "city": "Your City",
+    "state": "Your State",
+    "zip": "Your ZIP Code",
+    "country": "United States",
+    "phone": "Your Phone Number"
+  },
+  "payment_info": {
+    "card_number": "",
+    "expiry_month": "",
+    "expiry_year": "",
+    "cvv": "",
+    "cardholder_name": ""
+  },
+  "discord_notifications": {
+    "enabled": true,
+    "webhook_url": "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN",
+    "message_count": 10
+  },
+  "sms_notifications": {
+    "enabled": true,
+    "twilio_account_sid": "your_twilio_account_sid",
+    "twilio_auth_token": "your_twilio_auth_token",
+    "twilio_from_number": "+1234567890",
+    "to_number": "+1234567890",
+    "message_count": 10
+  }
+}
+
