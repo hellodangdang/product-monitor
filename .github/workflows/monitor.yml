@@ -25,12 +25,12 @@ jobs:
         run: |
           pip install requests
       
-      - name: Get last notification time from cache
-        id: cache-last-notification
-        uses: actions/cache@v3
+      - name: Restore last notification time from cache
+        uses: actions/cache/restore@v3
+        id: cache-restore
         with:
           path: .last_notification
-          key: last-notification-${{ secrets.PRODUCT_URL }}
+          key: last-notification-${{ hashFiles(secrets.PRODUCT_URL) }}
       
       - name: Run monitor
         env:
@@ -42,9 +42,9 @@ jobs:
           python3 monitor_github_actions.py
       
       - name: Save notification time to cache
-        if: success() || failure()
-        uses: actions/cache@v3
+        if: always()
+        uses: actions/cache/save@v3
         with:
           path: .last_notification
-          key: last-notification-${{ secrets.PRODUCT_URL }}
+          key: last-notification-${{ hashFiles(secrets.PRODUCT_URL) }}
 
