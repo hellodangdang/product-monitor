@@ -10,16 +10,19 @@
 
 ## Cost:
 
-- **Public repos:** FREE (unlimited minutes)
+- **Public repos:** FREE (unlimited minutes) ⭐ **Recommended for frequent checks**
 - **Private repos:** FREE (2000 minutes/month = ~33 hours)
-  - Your monitor runs ~5 minutes/day = ~150 minutes/month
-  - Well within free tier!
+  - Every 5 minutes: ~150 minutes/month ✅ Well within free tier
+  - Every 2 minutes: ~10,800 minutes/month ❌ Exceeds by ~8,800 min (~$70/month)
+  - Minimum for free tier: ~11 minutes between checks
 
 ## Limitations:
 
-- **Minimum interval:** 5 minutes (can't check every 10 seconds)
+- **Recommended minimum interval:** 5 minutes (GitHub's recommendation)
+- **Technical minimum:** 1 minute (cron supports it, but not recommended)
+- **Free tier limit (private repos):** ~11 minutes minimum to stay within 2000 min/month
 - **No browser automation:** Uses HTTP requests instead (simpler, faster)
-- **Public repos:** Code is visible (but secrets are hidden)
+- **Public repos:** Code is visible (but secrets are hidden) - but unlimited free minutes!
 
 ## Setup Steps:
 
@@ -27,7 +30,7 @@
 
 ```bash
 # Initialize git repo (if not already)
-cd /Users/yijiedang/Documents/GitHub/crawler
+cd /path/to/your/crawler
 git init
 git add .
 git commit -m "Initial commit"
@@ -60,17 +63,19 @@ git push -u origin main
 3. Click **New repository secret**
 4. Add these secrets:
 
-   **Secret 1:**
+   **Secret 1 (REQUIRED):**
    - Name: `PRODUCT_URL`
-   - Value: `https://www.therow.com/products/sally-black`
+   - Value: `https://www.therow.com/products/sally-black` (or your product URL)
+   - ⚠️ **Required** - Monitor will fail if not set
 
-   **Secret 2:**
+   **Secret 2 (REQUIRED):**
    - Name: `DISCORD_WEBHOOK`
-   - Value: `https://discord.com/api/webhooks/1438604854745366558/WjAt0vhZWRUKGuBlKu7fum3Ft9GZHeNdjwI7UdlH101kW8OghuOo75mwuc49JydIXRMV`
+   - Value: `YOUR_DISCORD_WEBHOOK_URL_HERE` (get this from your Discord server settings)
+   - ⚠️ **Required** - Monitor will fail if not set
 
    **Secret 3 (optional):**
    - Name: `MESSAGE_COUNT`
-   - Value: `10`
+   - Value: `10` (default: 10 if not set)
 
 ### 5. Enable GitHub Actions
 
@@ -80,7 +85,7 @@ git push -u origin main
 
 ## How It Works:
 
-1. **Schedule:** Runs every 5 minutes automatically
+1. **Schedule:** Runs every 2 minutes automatically (configurable in `.github/workflows/monitor.yml`)
 2. **Check:** Makes HTTP request to product page
 3. **Detect:** Looks for "sold out" vs "add to cart" text
 4. **Notify:** Sends Discord messages if available
@@ -137,16 +142,23 @@ GitHub Actions will automatically use the new code!
 
 | Option | Cost | Check Interval |
 |--------|------|----------------|
-| **GitHub Actions** | **FREE** | 5 minutes |
+| **GitHub Actions (Public)** | **FREE** | 2 minutes (unlimited) |
+| **GitHub Actions (Private, 5 min)** | **FREE** | 5 minutes |
+| **GitHub Actions (Private, 2 min)** | **~$70/month** | 2 minutes |
 | MacBook | $0 (electricity) | 10 seconds |
 | Cloud Server | $6/month | 10 seconds |
 
 ## Recommendation:
 
-**Use GitHub Actions if:**
+**Use GitHub Actions (Public Repo) if:**
+- You want FREE 24/7 monitoring with frequent checks (every 2 minutes)
+- You're okay with code being public (secrets are still hidden)
+- ⭐ **Best option for 2-minute intervals**
+
+**Use GitHub Actions (Private Repo) if:**
 - You want FREE 24/7 monitoring
-- 5 minute checks are acceptable
-- You're okay with public repo (or have private repo with <2000 min/month usage)
+- 5-11 minute checks are acceptable
+- You need code to be private
 
 **Use MacBook/Cloud if:**
 - You need faster checks (10 seconds)
@@ -159,7 +171,12 @@ GitHub Actions will automatically use the new code!
 2. Push code
 3. Add secrets
 4. Enable Actions
-5. Done! It will run automatically every 5 minutes!
+5. Done! It will run automatically every 2 minutes!
+
+**Note:** The workflow is set to run every 2 minutes. For private repos, this exceeds the free tier. Consider:
+- Using a **public repo** (unlimited free minutes)
+- Changing to 11+ minutes in `.github/workflows/monitor.yml` (fits free tier)
+- Or accepting the ~$70/month cost for 2-minute checks
 
 Want help with any step? Let me know!
 

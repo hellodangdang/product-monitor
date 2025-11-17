@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 # Get configuration from environment variables (GitHub Secrets)
-PRODUCT_URL = os.getenv('PRODUCT_URL', 'https://www.therow.com/products/sally-black')
+PRODUCT_URL = os.getenv('PRODUCT_URL', '')
 DISCORD_WEBHOOK = os.getenv('DISCORD_WEBHOOK', '')
 MESSAGE_COUNT = int(os.getenv('MESSAGE_COUNT', '10'))
 
@@ -88,10 +88,21 @@ def send_discord_notification(webhook_url, message, count=10):
 
 def main():
     """Main monitoring function."""
+    # Validate required secrets
+    if not PRODUCT_URL:
+        print("❌ ERROR: PRODUCT_URL secret is not set!")
+        print("Please add PRODUCT_URL to your GitHub Secrets.")
+        exit(1)
+    
+    if not DISCORD_WEBHOOK:
+        print("❌ ERROR: DISCORD_WEBHOOK secret is not set!")
+        print("Please add DISCORD_WEBHOOK to your GitHub Secrets.")
+        exit(1)
+    
     print("=" * 60)
     print("GitHub Actions Product Monitor")
     print("=" * 60)
-    print(f"Product URL: {PRODUCT_URL}")
+    print(f"Product URL: [CONFIGURED]")  # Don't expose URL in logs
     print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
     

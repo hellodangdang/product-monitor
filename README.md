@@ -1,133 +1,124 @@
-# Product Monitor & Auto-Purchase Bot
+# Product Monitor - GitHub Actions
 
-Automatically monitors a product page and purchases it when it becomes available. Built specifically for The Row's Sally Bag, but can be adapted for any Shopify-based e-commerce site.
+Automatically monitors a product page and sends Discord notifications when it becomes available. Runs 24/7 for FREE on GitHub Actions.
 
 ## Features
 
-- 🔍 **Continuous Monitoring**: Checks product availability at configurable intervals
-- 🛒 **Auto Add to Cart**: Automatically adds product to cart when available
-- 📝 **Auto-Fill Forms**: Pre-fills shipping information to speed up checkout
-- 🔔 **Logging**: Comprehensive logging of all actions and status changes
-- ⚙️ **Configurable**: Easy-to-edit JSON configuration file
-
-## Prerequisites
-
-1. **Python 3.8+** installed on your system
-2. **Chrome browser** installed (for Selenium WebDriver)
-3. **ChromeDriver** - will be managed automatically via webdriver-manager
-
-## Setup
-
-1. **Clone or download this repository**
-
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Create your configuration file**:
-   ```bash
-   cp config.json.example config.json
-   ```
-
-4. **Edit `config.json`** with your information:
-   - Add your shipping address details
-   - Set your email address
-   - Adjust check interval (in seconds) - default is 60 seconds
-   - Set `headless: true` if you want to run without showing the browser window
-   - Set `exit_after_purchase: true` if you want the script to stop after a successful purchase
-
-## Usage
-
-### Basic Usage
-
-Run the monitor:
-```bash
-python product_monitor.py
-```
-
-Or specify a custom config file:
-```bash
-python product_monitor.py my_config.json
-```
-
-### Running in Background
-
-**On macOS/Linux:**
-```bash
-nohup python product_monitor.py > output.log 2>&1 &
-```
-
-**On Windows (PowerShell):**
-```powershell
-Start-Process python -ArgumentList "product_monitor.py" -WindowStyle Hidden
-```
+- 🔍 **24/7 Monitoring**: Checks product availability every 5 minutes automatically
+- 📢 **Discord Notifications**: Sends multiple Discord messages when product becomes available
+- 🆓 **FREE**: Uses GitHub Actions (unlimited for public repos, 2000 min/month for private)
+- ⚙️ **Easy Setup**: Just configure GitHub Secrets and push code
+- 🔔 **No Maintenance**: Runs automatically in the cloud
 
 ## How It Works
 
-1. **Monitoring**: The script checks the product page every N seconds (configurable)
-2. **Detection**: It looks for "Sold Out" indicators and "Add to Cart" buttons
-3. **Purchase Flow**: When available:
-   - Adds product to cart
-   - Navigates to checkout
-   - Fills shipping information
-   - **Stops for manual payment review** (for security)
+1. **Schedule**: GitHub Actions runs the monitor every 5 minutes
+2. **Check**: Makes HTTP request to product page
+3. **Detect**: Looks for "sold out" vs "add to cart" text patterns
+4. **Notify**: Sends Discord messages if product is available
+5. **Alert**: Workflow shows as "failed" when product is available (makes it more visible!)
 
-## Security Note
+## Setup
 
-⚠️ **IMPORTANT**: For security reasons, the script does NOT automatically fill payment information. When a product becomes available and the purchase flow starts, you should:
+### 1. Create GitHub Repository
 
-1. Review the checkout page
-2. Manually enter your payment information
-3. Complete the purchase
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/product-monitor.git
+git push -u origin main
+```
 
-If you want full automation (not recommended), you can uncomment and modify the payment section in `product_monitor.py`, but be aware of the security risks of storing payment information in plain text.
+### 2. Configure GitHub Secrets
 
-## Configuration Options
+1. Go to your repo on GitHub
+2. Click **Settings** → **Secrets and variables** → **Actions**
+3. Click **New repository secret**
+4. Add these secrets:
 
-- `product_url`: The URL of the product to monitor
-- `check_interval`: How often to check (in seconds). Lower = faster detection but more requests
-- `headless`: Run browser in background (`true`) or visible (`false`)
-- `exit_after_purchase`: Stop monitoring after successful purchase (`true`) or continue (`false`)
-- `shipping_info`: Your shipping address details
-- `payment_info`: Payment details (currently not used for security)
+   **PRODUCT_URL (REQUIRED):**
+   - Value: `https://www.therow.com/products/sally-black` (or your product URL)
+   - ⚠️ **Required** - Monitor will fail if not set
+
+   **DISCORD_WEBHOOK (REQUIRED):**
+   - Value: Your Discord webhook URL (see `DISCORD_SETUP.md`)
+   - ⚠️ **Required** - Monitor will fail if not set
+
+   **MESSAGE_COUNT (optional):**
+   - Value: `10` (number of messages to send, default: 10)
+
+### 3. Enable GitHub Actions
+
+1. Go to **Actions** tab in your repo
+2. Click "I understand my workflows, go ahead and enable them"
+3. The workflow will start running automatically!
+
+## Viewing Results
+
+1. Go to **Actions** tab in your GitHub repo
+2. Click on latest workflow run
+3. See logs in real-time
+4. If product is available, workflow will "fail" (intentional - makes it more visible!)
+
+## Manual Trigger
+
+You can trigger manually:
+1. Go to **Actions** tab
+2. Click "Product Monitor" workflow
+3. Click "Run workflow" button
+
+## Configuration
+
+The monitor uses GitHub Secrets for configuration:
+
+- `PRODUCT_URL`: The product page URL to monitor
+- `DISCORD_WEBHOOK`: Your Discord webhook URL
+- `MESSAGE_COUNT`: Number of Discord messages to send (default: 10)
+
+## Limitations
+
+- **Minimum interval:** 5 minutes (GitHub Actions limitation)
+- **HTTP-based:** Uses HTTP requests instead of browser automation (simpler, faster)
+- **Detection:** Looks for text patterns - may need updates if website changes
 
 ## Troubleshooting
 
-### ChromeDriver Issues
+### Discord Notifications Not Working
 
-If you encounter ChromeDriver errors, try:
-```bash
-pip install --upgrade selenium webdriver-manager
-```
+- Verify your Discord webhook URL is correct
+- Check that the webhook is still active in your Discord server
+- Check GitHub Actions logs for error messages
 
 ### Product Not Detected as Available
 
-- The script looks for specific text patterns. If the website changes its wording, you may need to update the detection logic in `product_monitor.py`
-- Try running with `headless: false` to see what the script is seeing
+- The script looks for specific text patterns ("sold out", "add to cart", etc.)
+- If the website changes its wording, you may need to update `monitor_github_actions.py`
 
 ### Rate Limiting
 
-If you check too frequently, the website might block you. Increase `check_interval` to 120-300 seconds.
+- GitHub Actions runs every 5 minutes, which is respectful to the website
+- If you need faster checks, consider running locally (not included in this repo)
 
-## Logs
+## Cost
 
-All activity is logged to:
-- Console output
-- `monitor.log` file
+- **Public repos:** FREE (unlimited minutes)
+- **Private repos:** FREE (2000 minutes/month = ~33 hours)
+  - Monitor runs ~5 minutes/day = ~150 minutes/month
+  - Well within free tier!
+
+## Documentation
+
+- `GITHUB_ACTIONS_SETUP.md` - Detailed setup instructions
+- `DISCORD_SETUP.md` - How to create a Discord webhook
 
 ## Legal & Ethical Considerations
 
 - Use responsibly and in accordance with the website's Terms of Service
-- Be respectful with check intervals (don't spam the server)
+- Be respectful with check intervals
 - This tool is for personal use only
-- Some retailers may prohibit automated purchasing
 
 ## License
 
 This project is provided as-is for educational and personal use.
-
-## Support
-
-For issues or questions, check the logs in `monitor.log` for detailed error messages.
-

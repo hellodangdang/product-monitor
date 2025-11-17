@@ -2,8 +2,11 @@ name: Product Monitor
 
 on:
   schedule:
-    # Run every 5 minutes (minimum interval for GitHub Actions)
-    - cron: '*/5 * * * *'
+    # Run every 2 minutes
+    # WARNING: This uses ~10,800 minutes/month (exceeds 2,000 free tier by ~8,800 min = ~$70/month)
+    # For free tier, use 11+ minutes (e.g., '*/11 * * * *')
+    # Or use a PUBLIC repo for unlimited free minutes
+    - cron: '*/2 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -26,6 +29,7 @@ jobs:
         env:
           PRODUCT_URL: ${{ secrets.PRODUCT_URL }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          MESSAGE_COUNT: ${{ secrets.MESSAGE_COUNT }}
         run: |
           python3 monitor_github_actions.py
 
