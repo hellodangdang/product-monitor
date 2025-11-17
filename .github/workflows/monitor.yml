@@ -2,11 +2,11 @@ name: Product Monitor
 
 on:
   schedule:
-    # Run every 2 minutes
-    # WARNING: This uses ~10,800 minutes/month (exceeds 2,000 free tier by ~8,800 min = ~$70/month)
+    # Run every 5 minutes (more reliable than 2 minutes)
+    # This uses ~8,640 minutes/month (exceeds 2,000 free tier by ~6,640 min = ~$53/month)
     # For free tier, use 11+ minutes (e.g., '*/11 * * * *')
     # Or use a PUBLIC repo for unlimited free minutes
-    - cron: '*/2 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
