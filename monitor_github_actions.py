@@ -7,13 +7,12 @@ Uses HTTP requests instead of browser automation.
 import os
 import requests
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Get configuration from environment variables (GitHub Secrets)
 PRODUCT_URL = os.getenv('PRODUCT_URL', '')
 DISCORD_WEBHOOK = os.getenv('DISCORD_WEBHOOK', '')
 MESSAGE_COUNT = int(os.getenv('MESSAGE_COUNT', '10'))
-NOTIFICATION_COOLDOWN_MINUTES = int(os.getenv('NOTIFICATION_COOLDOWN_MINUTES', '15'))  # Default: 15 minutes of active notifications, then cooldown
 
 def check_availability(url):
     """Check if product is available using HTTP request."""
@@ -174,75 +173,6 @@ def send_discord_notification(webhook_url, message, count=10):
     print(f"SUMMARY: {success_count}/{count} notifications sent successfully")
     print("=" * 60)
 
-def should_send_notification():
-    """Check if we should send notification based on cooldown period.
-    
-    Logic: Send notifications for first 15 minutes, then cooldown.
-    This means: if first notification was less than 15 minutes ago, keep sending.
-    After 15 minutes, enter cooldown period.
-    """
-    # Read first notification time from cache file (when we first detected availability)
-    cache_file = '.last_notification'
-    
-    if not os.path.exists(cache_file):
-        # Never sent before, so send it (this is the first detection)
-        print("📝 Cache file not found - this is the first detection")
-        return True, None
-    
-    try:
-        with open(cache_file, 'r') as f:
-            first_notification_str = f.read().strip()
-        
-        if not first_notification_str:
-            print("📝 Cache file is empty - this is the first detection")
-            return True, None
-        
-        first_notification = datetime.fromisoformat(first_notification_str)
-        time_since_first = datetime.now() - first_notification
-        
-        print(f"📝 Cache file found - first notification was {time_since_first.total_seconds() / 60:.1f} minutes ago")
-        
-        # If less than 15 minutes since first notification, keep sending
-        if time_since_first < timedelta(minutes=NOTIFICATION_COOLDOWN_MINUTES):
-            # Still in active notification period (first 15 minutes)
-            minutes_remaining = (timedelta(minutes=NOTIFICATION_COOLDOWN_MINUTES) - time_since_first).total_seconds() / 60
-            print(f"✅ Still in active period - {minutes_remaining:.1f} minutes remaining")
-            return True, first_notification
-        else:
-            # Cooldown period active (more than 15 minutes since first notification)
-            minutes_elapsed = time_since_first.total_seconds() / 60
-            print(f"⏸️  Cooldown active - {minutes_elapsed:.1f} minutes since first notification")
-            return False, first_notification
-    except Exception as e:
-        # If we can't parse the time, send notification to be safe
-        print(f"⚠️  Warning: Could not read last notification time: {e}")
-        return True, None
-
-def save_notification_time():
-    """Save current time as first notification time to cache file.
-    Only saves if file doesn't exist (first detection).
-    """
-    cache_file = '.last_notification'
-    try:
-        # Only save if file doesn't exist (first time detecting availability)
-        if not os.path.exists(cache_file):
-            with open(cache_file, 'w') as f:
-                f.write(datetime.now().isoformat())
-            print(f"✅ Saved notification time to cache file: {datetime.now().isoformat()}")
-        else:
-            print(f"ℹ️  Cache file already exists, not overwriting")
-    except Exception as e:
-        print(f"⚠️  Warning: Could not save notification time: {e}")
-        print(f"   This is okay - cache save may fail if multiple runs happen simultaneously")
-
-def clear_notification_time():
-    """Clear notification time when product goes sold out."""
-    cache_file = '.last_notification'
-    try:
-        if os.path.exists(cache_file):
-            os.remove(cache_file)
-    except Exception as e:
-        print(f"Warning: Could not clear notification time: {e}")
 
 def main():
     """Main monitoring function."""
@@ -263,7 +193,6 @@ def main():
     print(f"Product URL: [CONFIGURED]")  # Don't expose URL in logs
     print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Message count: {MESSAGE_COUNT} (from MESSAGE_COUNT secret)")
-    print(f"Active notification period: {NOTIFICATION_COOLDOWN_MINUTES} minutes")
     print("=" * 60)
     
     # Check availability
@@ -274,18 +203,7 @@ def main():
         print("✅ PRODUCT IS AVAILABLE!")
         print("=" * 60)
         
-        # Check if we should send notification (cooldown check)
-        should_send, first_notification = should_send_notification()
-        
-        if not should_send and first_notification:
-            minutes_elapsed = (datetime.now() - first_notification).total_seconds() / 60
-            print(f"⏸️  Notification cooldown active")
-            print(f"   First notification: {minutes_elapsed:.1f} minutes ago")
-            print(f"   Active period ended ({NOTIFICATION_COOLDOWN_MINUTES} minutes)")
-            print("   (Product is available, but cooldown period active)")
-            exit(0)  # Exit successfully - product available but cooldown active
-        
-        # Send notifications
+        # Send notifications immediately (no cooldown)
         product_name = PRODUCT_URL.split('/products/')[-1].replace('-', ' ').title()
         notification_message = (
             f"🚨 ALERT: {product_name} is NOW AVAILABLE!\n\n"
@@ -295,31 +213,13 @@ def main():
         
         send_discord_notification(DISCORD_WEBHOOK, notification_message, MESSAGE_COUNT)
         
-        # Save notification time to cache (only on first notification)
-        # This tracks when we first detected availability
-        if first_notification is None:
-            # This is the first time detecting availability
-            save_notification_time()
-            print("=" * 60)
-            print("✅ Notifications sent! (First detection)")
-            print(f"   Will continue sending notifications for next {NOTIFICATION_COOLDOWN_MINUTES} minutes")
-            print(f"   Cache file saved for next run")
-        else:
-            # Still in active period
-            minutes_elapsed = (datetime.now() - first_notification).total_seconds() / 60
-            minutes_remaining = NOTIFICATION_COOLDOWN_MINUTES - minutes_elapsed
-            print("=" * 60)
-            print("✅ Notifications sent!")
-            print(f"   Active period: {minutes_elapsed:.1f} minutes elapsed, {minutes_remaining:.1f} minutes remaining")
-            print(f"   Cache file exists, will continue checking")
+        print("=" * 60)
+        print("✅ Notifications sent!")
         
         # Exit with error code to make GitHub Actions show as failed (so you notice)
         exit(1)  # This makes the workflow show as "failed" so it's more visible
     else:
         print("❌ Product is SOLD OUT")
-        # Clear notification time when product goes sold out
-        # This allows fresh notifications when it becomes available again
-        clear_notification_time()
         print("Will check again in 2 minutes...")
         exit(0)
 

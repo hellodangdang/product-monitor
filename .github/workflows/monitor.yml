@@ -25,33 +25,11 @@ jobs:
         run: |
           pip install requests
       
-      - name: Clear cache (for testing)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "Clearing cache for fresh test..."
-          rm -f .last_notification || true
-      
-      - name: Restore last notification time from cache
-        uses: actions/cache/restore@v3
-        id: cache-restore
-        with:
-          path: .last_notification
-          key: last-notification-time
-      
       - name: Run monitor
         env:
           PRODUCT_URL: ${{ secrets.PRODUCT_URL }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           MESSAGE_COUNT: ${{ secrets.MESSAGE_COUNT }}
-          NOTIFICATION_COOLDOWN_MINUTES: ${{ secrets.NOTIFICATION_COOLDOWN_MINUTES || '15' }}
         run: |
           python3 monitor_github_actions.py
-      
-      - name: Save notification time to cache
-        if: always()
-        continue-on-error: true
-        uses: actions/cache/save@v3
-        with:
-          path: .last_notification
-          key: last-notification-time
 
