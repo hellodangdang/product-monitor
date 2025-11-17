@@ -54,5 +54,4 @@ jobs:
         with:
           path: .last_notification
           key: last-notification-time
-          fail-on-cache-miss: false
 
