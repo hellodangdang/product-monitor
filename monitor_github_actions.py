@@ -131,27 +131,48 @@ def check_availability(url):
 
 def send_discord_notification(webhook_url, message, count=10):
     """Send Discord notifications."""
+    print("=" * 60)
+    print("DISCORD NOTIFICATION DEBUG:")
+    print(f"  Webhook URL provided: {'Yes' if webhook_url else 'No'}")
+    print(f"  Webhook URL length: {len(webhook_url) if webhook_url else 0}")
+    print(f"  Message count: {count}")
+    print(f"  Message length: {len(message)}")
+    print("=" * 60)
+    
     if not webhook_url:
-        print("Discord webhook not configured")
+        print("❌ ERROR: Discord webhook not configured!")
+        print("   DISCORD_WEBHOOK secret is missing or empty")
         return
     
     print(f"Sending {count} Discord notifications...")
     
+    success_count = 0
     for i in range(count):
         try:
             payload = {
                 "content": message,
                 "username": "Product Monitor Bot"
             }
-            response = requests.post(webhook_url, json=payload, timeout=5)
+            print(f"  Attempting to send notification {i+1}/{count}...")
+            response = requests.post(webhook_url, json=payload, timeout=10)
+            
+            print(f"  Response status: {response.status_code}")
             if response.status_code == 204:
-                print(f"✅ Discord notification {i+1}/{count} sent")
+                print(f"✅ Discord notification {i+1}/{count} sent successfully")
+                success_count += 1
             else:
                 print(f"⚠️  Discord notification {i+1}/{count} - Status: {response.status_code}")
+                print(f"   Response text: {response.text[:200]}")
             if i < count - 1:
                 time.sleep(0.5)
         except Exception as e:
             print(f"❌ Failed to send Discord notification {i+1}/{count}: {e}")
+            import traceback
+            print(f"   Traceback: {traceback.format_exc()}")
+    
+    print("=" * 60)
+    print(f"SUMMARY: {success_count}/{count} notifications sent successfully")
+    print("=" * 60)
 
 def should_send_notification():
     """Check if we should send notification based on cooldown period.
