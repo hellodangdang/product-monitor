@@ -8,6 +8,7 @@ import os
 import requests
 import time
 from datetime import datetime
+import pytz
 
 # Get configuration from environment variables (GitHub Secrets)
 PRODUCT_URL = os.getenv('PRODUCT_URL', '')
@@ -187,11 +188,22 @@ def main():
         print("Please add DISCORD_WEBHOOK to your GitHub Secrets.")
         exit(1)
     
+    # Get timezone from environment or default to US Eastern (you can change this)
+    timezone_str = os.getenv('TIMEZONE', 'America/New_York')  # Default to Eastern Time
+    try:
+        tz = pytz.timezone(timezone_str)
+        local_time = datetime.now(tz)
+    except:
+        # Fallback to UTC if timezone is invalid
+        local_time = datetime.now()
+        timezone_str = 'UTC'
+    
     print("=" * 60)
     print("GitHub Actions Product Monitor")
     print("=" * 60)
     print(f"Product URL: [CONFIGURED]")  # Don't expose URL in logs
-    print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Time (UTC): {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Time ({timezone_str}): {local_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
     print(f"Message count: {MESSAGE_COUNT} (from MESSAGE_COUNT secret)")
     print("=" * 60)
     
@@ -204,11 +216,21 @@ def main():
         print("=" * 60)
         
         # Send notifications immediately (no cooldown)
+        # Get local time for notification
+        timezone_str = os.getenv('TIMEZONE', 'America/New_York')  # Default to Eastern Time
+        try:
+            tz = pytz.timezone(timezone_str)
+            local_time = datetime.now(tz)
+            time_str = local_time.strftime('%Y-%m-%d %H:%M:%S %Z')
+        except:
+            local_time = datetime.now()
+            time_str = local_time.strftime('%Y-%m-%d %H:%M:%S UTC')
+        
         product_name = PRODUCT_URL.split('/products/')[-1].replace('-', ' ').title()
         notification_message = (
             f"🚨 ALERT: {product_name} is NOW AVAILABLE!\n\n"
             f"🔗 {PRODUCT_URL}\n\n"
-            f"⏰ Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            f"⏰ Time: {time_str}"
         )
         
         send_discord_notification(DISCORD_WEBHOOK, notification_message, MESSAGE_COUNT)

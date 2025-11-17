@@ -30,6 +30,7 @@ jobs:
           PRODUCT_URL: ${{ secrets.PRODUCT_URL }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           MESSAGE_COUNT: ${{ secrets.MESSAGE_COUNT }}
+          TIMEZONE: ${{ secrets.TIMEZONE || 'America/New_York' }}
         run: |
           python3 monitor_github_actions.py
 
