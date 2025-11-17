@@ -44,26 +44,45 @@ def check_availability(url):
             'add to',  # More flexible
         ]
         
-        # Look for sold out indicators first
-        for indicator in sold_out_indicators:
-            if indicator in page_content:
-                # Check if it's in a button or prominent location
-                # If "sold out" appears, it's likely sold out
-                return False
+        # PRIORITY: Check for "add to shopping bag" FIRST (most specific and common for The Row)
+        # This is the primary indicator for availability on The Row
+        if 'add to shopping bag' in page_content:
+            # Find the position of "add to shopping bag"
+            bag_pos = page_content.find('add to shopping bag')
+            # Check if it's disabled - look for "disabled" near the button
+            disabled_pos = page_content.find('disabled', bag_pos)
+            # If "disabled" appears very close after "add to shopping bag", it might be disabled
+            # But if there's distance or no "disabled", it's available
+            if disabled_pos == -1 or disabled_pos > bag_pos + 100:  # Allow reasonable distance
+                # Double-check: make sure it's not in a "sold out" context
+                context_start = max(0, bag_pos - 200)
+                context_end = min(len(page_content), bag_pos + 200)
+                context = page_content[context_start:context_end]
+                # If context doesn't strongly indicate sold out, it's available
+                strong_sold_out = any(so in context for so in ['sold out', 'out of stock'])
+                if not strong_sold_out:
+                    return True
         
-        # Look for available indicators (prioritize more specific ones first)
-        # Check most specific patterns first
-        specific_patterns = ['add to shopping bag', 'add to cart', 'add to bag', 'buy now']
+        # Look for other available indicators (prioritize more specific ones first)
+        specific_patterns = ['add to cart', 'add to bag', 'buy now']
         for indicator in specific_patterns:
             if indicator in page_content:
-                # Check if button is disabled
-                # Find position of indicator and "disabled"
                 indicator_pos = page_content.find(indicator)
                 disabled_pos = page_content.find('disabled', indicator_pos)
-                # If disabled comes after indicator, it might be disabled
-                # But if indicator exists, it's likely available
-                if disabled_pos == -1 or disabled_pos > indicator_pos + 50:  # Allow some distance
+                if disabled_pos == -1 or disabled_pos > indicator_pos + 50:
                     return True
+        
+        # Only check for sold out if we haven't found available indicators
+        # (Some pages might mention "sold out" in descriptions but still have add buttons)
+        for indicator in sold_out_indicators:
+            if indicator in page_content:
+                # Make sure it's a strong sold out signal (not just mentioned in text)
+                # Check if it's near button-related text
+                sold_out_pos = page_content.find(indicator)
+                button_nearby = any(btn in page_content[max(0, sold_out_pos-50):sold_out_pos+50] 
+                                   for btn in ['button', 'btn', 'add to'])
+                if button_nearby:
+                    return False
         
         # Check for more general patterns
         general_patterns = ['purchase', 'add to']
