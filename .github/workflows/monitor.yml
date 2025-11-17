@@ -1,0 +1,52 @@
+name: Product Monitor
+
+on:
+  schedule:
+    # Run every 2 minutes
+    # WARNING: This uses ~10,800 minutes/month (exceeds 2,000 free tier by ~8,800 min = ~$70/month)
+    # For free tier, use 11+ minutes (e.g., '*/11 * * * *')
+    # Or use a PUBLIC repo for unlimited free minutes
+    - cron: '*/2 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install dependencies
+        run: |
+          pip install requests
+      
+      - name: Restore last notification time from cache
+        uses: actions/cache/restore@v3
+        id: cache-restore
+        with:
+          path: .last_notification
+          key: last-notification-time
+      
+      - name: Run monitor
+        env:
+          PRODUCT_URL: ${{ secrets.PRODUCT_URL }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          MESSAGE_COUNT: ${{ secrets.MESSAGE_COUNT }}
+          NOTIFICATION_COOLDOWN_MINUTES: ${{ secrets.NOTIFICATION_COOLDOWN_MINUTES || '15' }}
+        run: |
+          python3 monitor_github_actions.py
+      
+      - name: Save notification time to cache
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v3
+        with:
+          path: .last_notification
+          key: last-notification-time
+          fail-on-cache-miss: false
+
