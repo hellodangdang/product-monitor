@@ -165,6 +165,7 @@ def should_send_notification():
     
     if not os.path.exists(cache_file):
         # Never sent before, so send it (this is the first detection)
+        print("📝 Cache file not found - this is the first detection")
         return True, None
     
     try:
@@ -172,23 +173,28 @@ def should_send_notification():
             first_notification_str = f.read().strip()
         
         if not first_notification_str:
+            print("📝 Cache file is empty - this is the first detection")
             return True, None
         
         first_notification = datetime.fromisoformat(first_notification_str)
         time_since_first = datetime.now() - first_notification
         
+        print(f"📝 Cache file found - first notification was {time_since_first.total_seconds() / 60:.1f} minutes ago")
+        
         # If less than 15 minutes since first notification, keep sending
         if time_since_first < timedelta(minutes=NOTIFICATION_COOLDOWN_MINUTES):
             # Still in active notification period (first 15 minutes)
             minutes_remaining = (timedelta(minutes=NOTIFICATION_COOLDOWN_MINUTES) - time_since_first).total_seconds() / 60
+            print(f"✅ Still in active period - {minutes_remaining:.1f} minutes remaining")
             return True, first_notification
         else:
             # Cooldown period active (more than 15 minutes since first notification)
             minutes_elapsed = time_since_first.total_seconds() / 60
+            print(f"⏸️  Cooldown active - {minutes_elapsed:.1f} minutes since first notification")
             return False, first_notification
     except Exception as e:
         # If we can't parse the time, send notification to be safe
-        print(f"Warning: Could not read last notification time: {e}")
+        print(f"⚠️  Warning: Could not read last notification time: {e}")
         return True, None
 
 def save_notification_time():
@@ -272,6 +278,7 @@ def main():
             print("=" * 60)
             print("✅ Notifications sent! (First detection)")
             print(f"   Will continue sending notifications for next {NOTIFICATION_COOLDOWN_MINUTES} minutes")
+            print(f"   Cache file saved for next run")
         else:
             # Still in active period
             minutes_elapsed = (datetime.now() - first_notification).total_seconds() / 60
@@ -279,6 +286,7 @@ def main():
             print("=" * 60)
             print("✅ Notifications sent!")
             print(f"   Active period: {minutes_elapsed:.1f} minutes elapsed, {minutes_remaining:.1f} minutes remaining")
+            print(f"   Cache file exists, will continue checking")
         
         # Exit with error code to make GitHub Actions show as failed (so you notice)
         exit(1)  # This makes the workflow show as "failed" so it's more visible
