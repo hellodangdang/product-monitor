@@ -7,12 +7,13 @@ Uses HTTP requests instead of browser automation.
 import os
 import requests
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Get configuration from environment variables (GitHub Secrets)
 PRODUCT_URL = os.getenv('PRODUCT_URL', '')
 DISCORD_WEBHOOK = os.getenv('DISCORD_WEBHOOK', '')
 MESSAGE_COUNT = int(os.getenv('MESSAGE_COUNT', '10'))
+NOTIFICATION_COOLDOWN_HOURS = int(os.getenv('NOTIFICATION_COOLDOWN_HOURS', '24'))  # Default: notify once per day
 
 def check_availability(url):
     """Check if product is available using HTTP request."""
@@ -152,6 +153,46 @@ def send_discord_notification(webhook_url, message, count=10):
         except Exception as e:
             print(f"❌ Failed to send Discord notification {i+1}/{count}: {e}")
 
+def should_send_notification():
+    """Check if we should send notification based on cooldown period."""
+    # Read last notification time from cache file (set up by GitHub Actions cache)
+    cache_file = '.last_notification'
+    
+    if not os.path.exists(cache_file):
+        # Never sent before, so send it
+        return True, None
+    
+    try:
+        with open(cache_file, 'r') as f:
+            last_notification_str = f.read().strip()
+        
+        if not last_notification_str:
+            return True, None
+        
+        last_notification = datetime.fromisoformat(last_notification_str)
+        time_since_last = datetime.now() - last_notification
+        
+        if time_since_last >= timedelta(hours=NOTIFICATION_COOLDOWN_HOURS):
+            # Cooldown period has passed, send notification
+            return True, last_notification
+        else:
+            # Still in cooldown period
+            hours_remaining = (timedelta(hours=NOTIFICATION_COOLDOWN_HOURS) - time_since_last).total_seconds() / 3600
+            return False, last_notification
+    except Exception as e:
+        # If we can't parse the time, send notification to be safe
+        print(f"Warning: Could not read last notification time: {e}")
+        return True, None
+
+def save_notification_time():
+    """Save current time as last notification time to cache file."""
+    cache_file = '.last_notification'
+    try:
+        with open(cache_file, 'w') as f:
+            f.write(datetime.now().isoformat())
+    except Exception as e:
+        print(f"Warning: Could not save notification time: {e}")
+
 def main():
     """Main monitoring function."""
     # Validate required secrets
@@ -170,6 +211,7 @@ def main():
     print("=" * 60)
     print(f"Product URL: [CONFIGURED]")  # Don't expose URL in logs
     print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Notification cooldown: {NOTIFICATION_COOLDOWN_HOURS} hours")
     print("=" * 60)
     
     # Check availability
@@ -179,6 +221,18 @@ def main():
     if is_available:
         print("✅ PRODUCT IS AVAILABLE!")
         print("=" * 60)
+        
+        # Check if we should send notification (cooldown check)
+        should_send, last_notification = should_send_notification()
+        
+        if not should_send and last_notification:
+            hours_ago = (datetime.now() - last_notification).total_seconds() / 3600
+            hours_remaining = NOTIFICATION_COOLDOWN_HOURS - hours_ago
+            print(f"⏸️  Notification cooldown active")
+            print(f"   Last notification: {hours_ago:.1f} hours ago")
+            print(f"   Next notification in: {hours_remaining:.1f} hours")
+            print("   (Product is available, but waiting for cooldown period)")
+            exit(0)  # Exit successfully - product available but cooldown active
         
         # Send notifications
         product_name = PRODUCT_URL.split('/products/')[-1].replace('-', ' ').title()
@@ -190,14 +244,18 @@ def main():
         
         send_discord_notification(DISCORD_WEBHOOK, notification_message, MESSAGE_COUNT)
         
+        # Save notification time to cache
+        save_notification_time()
+        
         print("=" * 60)
         print("✅ Notifications sent!")
+        print(f"   Next notification will be sent in {NOTIFICATION_COOLDOWN_HOURS} hours (if still available)")
         
         # Exit with error code to make GitHub Actions show as failed (so you notice)
         exit(1)  # This makes the workflow show as "failed" so it's more visible
     else:
         print("❌ Product is SOLD OUT")
-        print("Will check again in 5 minutes...")
+        print("Will check again in 2 minutes...")
         exit(0)
 
 if __name__ == '__main__':

@@ -25,11 +25,26 @@ jobs:
         run: |
           pip install requests
       
+      - name: Get last notification time from cache
+        id: cache-last-notification
+        uses: actions/cache@v3
+        with:
+          path: .last_notification
+          key: last-notification-${{ secrets.PRODUCT_URL }}
+      
       - name: Run monitor
         env:
           PRODUCT_URL: ${{ secrets.PRODUCT_URL }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           MESSAGE_COUNT: ${{ secrets.MESSAGE_COUNT }}
+          NOTIFICATION_COOLDOWN_HOURS: ${{ secrets.NOTIFICATION_COOLDOWN_HOURS || '24' }}
         run: |
           python3 monitor_github_actions.py
+      
+      - name: Save notification time to cache
+        if: success() || failure()
+        uses: actions/cache@v3
+        with:
+          path: .last_notification
+          key: last-notification-${{ secrets.PRODUCT_URL }}
 
