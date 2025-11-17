@@ -37,7 +37,7 @@ jobs:
           PRODUCT_URL: ${{ secrets.PRODUCT_URL }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           MESSAGE_COUNT: ${{ secrets.MESSAGE_COUNT }}
-          NOTIFICATION_COOLDOWN_HOURS: ${{ secrets.NOTIFICATION_COOLDOWN_HOURS || '24' }}
+          NOTIFICATION_COOLDOWN_MINUTES: ${{ secrets.NOTIFICATION_COOLDOWN_MINUTES || '15' }}
         run: |
           python3 monitor_github_actions.py
       
