@@ -4,7 +4,7 @@ Automatically monitors a product page and sends Discord notifications when it be
 
 ## Features
 
-- 🔍 **24/7 Monitoring**: Checks product availability every 5 minutes automatically
+- 🔍 **24/7 Monitoring**: Checks product availability every 10 minutes automatically
 - 📢 **Discord Notifications**: Sends multiple Discord messages when product becomes available
 - 🆓 **FREE**: Uses GitHub Actions (unlimited for public repos, 2000 min/month for private)
 - ⚙️ **Easy Setup**: Just configure GitHub Secrets and push code
@@ -12,7 +12,7 @@ Automatically monitors a product page and sends Discord notifications when it be
 
 ## How It Works
 
-1. **Schedule**: GitHub Actions runs the monitor every 5 minutes
+1. **Schedule**: GitHub Actions runs the monitor every 10 minutes
 2. **Check**: Makes HTTP request to product page
 3. **Detect**: Looks for "sold out" vs "add to cart" text patterns
 4. **Notify**: Sends Discord messages if product is available
@@ -79,7 +79,7 @@ The monitor uses GitHub Secrets for configuration:
 
 ## Limitations
 
-- **Minimum interval:** 5 minutes (GitHub Actions limitation)
+- **Minimum interval:** 10 minutes (recommended for reliability)
 - **HTTP-based:** Uses HTTP requests instead of browser automation (simpler, faster)
 - **Detection:** Looks for text patterns - may need updates if website changes
 
@@ -98,14 +98,14 @@ The monitor uses GitHub Secrets for configuration:
 
 ### Rate Limiting
 
-- GitHub Actions runs every 5 minutes, which is respectful to the website
+- GitHub Actions runs every 10 minutes, which is respectful to the website
 - If you need faster checks, consider running locally (not included in this repo)
 
 ## Cost
 
 - **Public repos:** FREE (unlimited minutes)
 - **Private repos:** FREE (2000 minutes/month = ~33 hours)
-  - Monitor runs ~5 minutes/day = ~150 minutes/month
+  - Monitor runs ~144 times/day (every 10 min) = ~2-3 minutes runtime/day = ~90 minutes/month
   - Well within free tier!
 
 ## Documentation
