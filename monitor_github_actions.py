@@ -235,12 +235,6 @@ def main():
     print(f"Active notification period: {NOTIFICATION_COOLDOWN_MINUTES} minutes")
     print("=" * 60)
     
-    # Debug: Show what MESSAGE_COUNT was read
-    message_count_env = os.getenv('MESSAGE_COUNT', 'NOT SET')
-    print(f"DEBUG: MESSAGE_COUNT env var = '{message_count_env}'")
-    print(f"DEBUG: MESSAGE_COUNT parsed = {MESSAGE_COUNT}")
-    print("=" * 60)
-    
     # Check availability
     print("Checking product availability...")
     is_available = check_availability(PRODUCT_URL)
