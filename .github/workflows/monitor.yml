@@ -43,8 +43,10 @@ jobs:
       
       - name: Save notification time to cache
         if: always()
+        continue-on-error: true
         uses: actions/cache/save@v3
         with:
           path: .last_notification
           key: last-notification-time
+          fail-on-cache-miss: false
 

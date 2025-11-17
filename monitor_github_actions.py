@@ -207,8 +207,12 @@ def save_notification_time():
         if not os.path.exists(cache_file):
             with open(cache_file, 'w') as f:
                 f.write(datetime.now().isoformat())
+            print(f"✅ Saved notification time to cache file: {datetime.now().isoformat()}")
+        else:
+            print(f"ℹ️  Cache file already exists, not overwriting")
     except Exception as e:
-        print(f"Warning: Could not save notification time: {e}")
+        print(f"⚠️  Warning: Could not save notification time: {e}")
+        print(f"   This is okay - cache save may fail if multiple runs happen simultaneously")
 
 def clear_notification_time():
     """Clear notification time when product goes sold out."""
