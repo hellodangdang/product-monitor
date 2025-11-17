@@ -46,21 +46,46 @@ def check_availability(url):
         
         # PRIORITY: Check for "add to shopping bag" FIRST (most specific and common for The Row)
         # This is the primary indicator for availability on The Row
+        # IMPORTANT: If "add to shopping bag" exists and is not disabled, it's AVAILABLE
+        # even if "sold out" appears elsewhere on the page (might be for other products)
         if 'add to shopping bag' in page_content:
-            # Find the position of "add to shopping bag"
-            bag_pos = page_content.find('add to shopping bag')
-            # Check if it's disabled - look for "disabled" near the button
-            disabled_pos = page_content.find('disabled', bag_pos)
-            # If "disabled" appears very close after "add to shopping bag", it might be disabled
-            # But if there's distance or no "disabled", it's available
-            if disabled_pos == -1 or disabled_pos > bag_pos + 100:  # Allow reasonable distance
-                # Double-check: make sure it's not in a "sold out" context
-                context_start = max(0, bag_pos - 200)
-                context_end = min(len(page_content), bag_pos + 200)
+            # Find ALL positions of "add to shopping bag" (might appear multiple times)
+            bag_positions = []
+            start = 0
+            while True:
+                pos = page_content.find('add to shopping bag', start)
+                if pos == -1:
+                    break
+                bag_positions.append(pos)
+                start = pos + 1
+            
+            # Check each occurrence
+            for bag_pos in bag_positions:
+                # Check if this specific button is disabled
+                # Look for "disabled" in a reasonable window after the button text
+                disabled_pos = page_content.find('disabled', bag_pos)
+                
+                # Check the immediate context around this button
+                context_start = max(0, bag_pos - 150)
+                context_end = min(len(page_content), bag_pos + 300)
                 context = page_content[context_start:context_end]
-                # If context doesn't strongly indicate sold out, it's available
-                strong_sold_out = any(so in context for so in ['sold out', 'out of stock'])
-                if not strong_sold_out:
+                
+                # Check if this specific button is disabled
+                # Look for patterns like "disabled" or "sold out" very close to the button
+                button_disabled = (
+                    'disabled' in context and 
+                    context.find('disabled') < (bag_pos - context_start + 100)
+                )
+                
+                # Check if "sold out" is in the immediate button context (not just anywhere on page)
+                sold_out_in_context = any(
+                    so in context and 
+                    abs(context.find(so) - (bag_pos - context_start)) < 100
+                    for so in ['sold out', 'out of stock']
+                )
+                
+                # If button is not disabled and not in a sold out context, it's AVAILABLE
+                if not button_disabled and not sold_out_in_context:
                     return True
         
         # Look for other available indicators (prioritize more specific ones first)
