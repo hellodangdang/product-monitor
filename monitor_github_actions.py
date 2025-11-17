@@ -242,7 +242,7 @@ def main():
         exit(1)  # This makes the workflow show as "failed" so it's more visible
     else:
         print("❌ Product is SOLD OUT")
-        print("Will check again in 2 minutes...")
+        print("Will check again in 5 minutes...")
         exit(0)
 
 if __name__ == '__main__':
